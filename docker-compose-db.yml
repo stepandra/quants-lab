@@ -28,5 +28,30 @@ services:
       - mongodb
     restart: unless-stopped
 
+  questdb:
+    image: questdb/questdb:latest
+    container_name: questdb
+    ports:
+      - "9000:9000"   # Web console
+      - "9009:9009"   # InfluxDB Line Protocol (ILP) - high-speed ingestion
+      - "8812:8812"   # PostgreSQL wire protocol
+      - "9003:9003"   # Health check
+    volumes:
+      - questdb_data_ql:/var/lib/questdb
+    environment:
+      - QDB_CAIRO_COMMIT_LAG=1000
+      - QDB_CAIRO_MAX_UNCOMMITTED_ROWS=10000
+      - QDB_LINE_TCP_ENABLED=true
+      - QDB_LINE_TCP_NET_BIND_TO=0.0.0.0:9009
+      - QDB_LINE_TCP_NET_CONNECTION_LIMIT=256
+      - QDB_LINE_TCP_NET_CONNECTION_TIMEOUT=300000
+      - QDB_LINE_TCP_NET_CONNECTION_QUEUE_TIMEOUT=5000
+      - QDB_HTTP_ENABLED=true
+      - QDB_HTTP_BIND_TO=0.0.0.0:9000
+      - QDB_PG_ENABLED=true
+      - QDB_PG_NET_BIND_TO=0.0.0.0:8812
+    restart: unless-stopped
+
 volumes:
   mongodb_data_ql:
+  questdb_data_ql:
