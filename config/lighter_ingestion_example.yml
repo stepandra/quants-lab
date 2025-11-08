@@ -1,0 +1,91 @@
+# Example configuration for Lighter API trades ingestion into QuestDB
+# This demonstrates how to configure the LighterTradesIngestionTask
+
+tasks:
+  - name: lighter_trades_ingestion
+    enabled: true
+    task_class: app.tasks.data_collection.lighter_trades_ingestion_task.LighterTradesIngestionTask
+    schedule:
+      type: frequency
+      frequency_hours: 1  # Run every hour
+    max_retries: 3
+    timeout_seconds: 600
+    config:
+      # Lighter API Configuration
+      use_testnet: false  # Set to true for testnet
+      # lighter_host: "https://mainnet.zklighter.elliot.ai"  # Optional: custom host
+
+      # Market Configuration
+      # Option 1: Specify market IDs directly
+      market_ids:
+        - 0  # BTC-USDC
+        - 1  # ETH-USDC
+        - 2  # SOL-USDC
+
+      # Option 2: Use trading pairs (will be converted to market IDs)
+      # trading_pairs:
+      #   - "BTC-USDC"
+      #   - "ETH-USDC"
+      #   - "SOL-USDC"
+
+      # Ingestion Configuration
+      trades_limit: 1000  # Maximum number of trades per market per fetch
+      lookback_hours: 24  # How far back to fetch trades
+
+      # QuestDB Configuration
+      questdb_host: localhost
+      questdb_port: 9009  # ILP port
+      questdb_table: lighter_trades
+      # questdb_auth: null  # Optional: tuple of (key_id, private_key, public_key)
+      # questdb_tls: false
+
+      # Performance Tuning
+      auto_flush_rows: 75000  # Flush after this many rows
+      auto_flush_interval: 1000  # Flush interval in milliseconds
+
+    tags:
+      - lighter
+      - trades
+      - data-ingestion
+      - questdb
+
+  - name: lighter_candles_ingestion
+    enabled: true
+    task_class: app.tasks.data_collection.lighter_trades_ingestion_task.LighterCandlesIngestionTask
+    schedule:
+      type: frequency
+      frequency_hours: 6  # Run every 6 hours
+    max_retries: 3
+    config:
+      # Lighter API Configuration
+      use_testnet: false
+
+      # Market Configuration
+      market_ids:
+        - 0  # BTC-USDC
+        - 1  # ETH-USDC
+        - 2  # SOL-USDC
+
+      # Candles Configuration
+      intervals:
+        - "1h"
+        - "4h"
+        - "1d"
+      lookback_days: 30
+      limit: 1000
+
+      # QuestDB Configuration
+      questdb_host: localhost
+      questdb_port: 9009
+      questdb_table: lighter_candles
+
+    tags:
+      - lighter
+      - candles
+      - ohlcv
+      - questdb
+
+# To use this configuration:
+# 1. Start QuestDB: docker-compose -f docker-compose-db.yml up -d questdb
+# 2. Install dependencies: pip install -e .
+# 3. Run the task: python -m core.tasks.runner --config config/lighter_ingestion_example.yml
